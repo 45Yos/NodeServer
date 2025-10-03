@@ -85,7 +85,9 @@ const find = async () => {
 
 const findOne = async (userId) => {
     try {
-        return Promise.resolve('user No: ' + userId);
+      const user = await User.findById(userId, { password: 0, __v: 0 });
+      
+        return Promise.resolve(user);
     } catch (error) {
         error.status = 404;
         return Promise.reject(error);

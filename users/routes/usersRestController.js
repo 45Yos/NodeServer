@@ -35,7 +35,10 @@ router.get('/:id', auth, async (req, res) => {
         handleError(res, 403, 'Authorization Error: Must be admin or the user himself!');
     }
     
+    
     const user = await getUser(userId);
+    console.log(user);
+    
     return res.status(200).send(user);
 } catch (error) {
     handleError(res, error.status || 500, error.message);
