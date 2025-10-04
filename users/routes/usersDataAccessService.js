@@ -151,7 +151,8 @@ const changeIsBizStatus = async (userId) => {
 
 const remove = async (userId) => {
     try {
-        return Promise.resolve('user No: ' + userId + ' removed');
+      const deletedUser = await User.findByIdAndDelete(userId);
+        return Promise.resolve('user No: ' + userId + ' ' + deletedUser.name.first + ' removed');
     } catch (error) {
         error.status = 404;
         return Promise.reject(error);

@@ -144,7 +144,6 @@ router.delete('/:id', auth, async (req, res) => {
     try {
     const userId = req.params.id;
     const user = await remove(userId);
-
     if (!user) return res.status(404).send('User not found');
 
     res.status(200).send(user);
