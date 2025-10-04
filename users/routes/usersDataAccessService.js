@@ -2,10 +2,9 @@ const db = process.env.DB || "DATABASE";
 const { generateAuthToken } = require('../../auth/Providers/jwt');
 const { comparePassword } = require('../helpers/bcrypt');
 const User = require('../models/mongodb/User');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('config');
-const { registerValidation } = require('../validations/userValidationService');
+const { validateUserUpdate } = require('../validations/userValidationService');
 
 
 
@@ -99,16 +98,27 @@ const findOne = async (userId) => {
 const update = async (userId, normalizedUser) => {
   if (db === "DATABASE") {
     try {
+
+       const { error } = validateUserUpdate(normalizedUser);
+    if (error) {
+      return Promise.reject(error);
+    }
+
+    const { createdAt, ...dataToUpdate } = normalizedUser;
+
+    dataToUpdate.updatedAt = new Date();
+
+      
       const updatedUser = await User.findByIdAndUpdate(
         userId,            
-        normalizedUser,      
+        dataToUpdate,      
         { new: true }         
       );
-
+      
       if (!updatedUser) {
         throw new Error("User not found");
       }
-
+    
       return Promise.resolve(updatedUser);
     } catch (error) {
       error.status = 400;
@@ -124,7 +134,13 @@ const update = async (userId, normalizedUser) => {
 
 const changeIsBizStatus = async (userId) => {
     try {
-        return Promise.resolve('user No: ' + userId + ' Is Bussiness!');
+      const user = await User.findById(userId);
+      user.isBusiness = true;
+      await user.save();
+      console.log(user);
+      
+      
+        return Promise.resolve('user No: ' + userId + ' ' + user.name.first + ' Is Bussiness!');
     } catch (error) {
         error.status = 404;
         return Promise.reject(error);

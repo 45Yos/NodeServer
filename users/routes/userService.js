@@ -76,13 +76,13 @@ const getUser = async (userId) => {
 
 const updateUser = async (userId, rawUser) => {
   try {
+    
     const { error } = validateUserUpdate(rawUser);
     if (error) {
       return Promise.reject(error);
     }
-
+    
     let user = normalizeUser(rawUser);
-    console.log("user to update:", user);
     
     user = await update(userId, user);
 

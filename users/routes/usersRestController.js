@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { registerUser, loginUser, getUsers, getUser, updateUser } = require('./userService');
-const { changeIsBizStatus } = require('./usersDataAccessService');
+const { changeIsBizStatus, remove } = require('./usersDataAccessService');
 const {auth} = require('../../auth/authService');
 const handleError = require('../../utils/errorHandler');
+const jwt = require('jsonwebtoken');
+const config = require('config');
+const User = require('../models/mongodb/User');
 
 
 
@@ -79,11 +82,13 @@ try {
 
 
 // PUT
-router.put('/:id', (req, res) => {
+router.put('/:id', auth, async (req, res) => {
     try {
-    const userId = req.params.id;
-    const user = updateUser(userId, req.body);
-    res.status(200).send(user);
+        
+        const userId = req.params.id;
+        const user = await updateUser(userId, req.body);
+        
+        res.status(200).send(user);
     } catch (error) {
         handleError(res, error.status || 500, error.message);
     }
@@ -95,12 +100,29 @@ router.put('/:id', (req, res) => {
 
 
 // PATCH
-router.patch('/:id', (req, res) => {
+router.patch('/:id', auth, async (req, res) => {
     try {
     const userId = req.params.id;
-    const user = changeIsBizStatus(userId);
-
+    const user = await changeIsBizStatus(userId);
     if (!user) return res.status(404).send('User not found');
+    
+    
+    const tokenFromClient = req.header('x-auth-token');
+    const userP = jwt.decode(tokenFromClient);
+    const userName = await User.findById(userId);
+    
+    
+    
+    const isB = req.body.isBusiness;
+    if (!isB){
+        userName.isBusiness = false;
+        await userName.save();
+
+        console.log(userName);
+        return res.status(400).send(userName.name.first + ' is not business');
+    }
+
+    userP.isBusiness = true;
 
     res.status(200).send(user);
 
@@ -117,11 +139,11 @@ router.patch('/:id', (req, res) => {
 
 
 // DELETE
-router.delete('/:id', (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
 
     try {
     const userId = req.params.id;
-    const user = deleteUser(userId);
+    const user = await remove(userId);
 
     if (!user) return res.status(404).send('User not found');
 
