@@ -33,9 +33,28 @@ const login = async ({ email, password }) => {
       const user = await User.findOne({ email });
       if (!user) throw new Error("Authentication Error: Invalid email");
 
+        if (user.lockedUntil && user.lockedUntil > Date.now()) {
+        const timeLeft = Math.ceil((user.lockedUntil - Date.now()) / (1000 * 60));
+        throw new Error(`Account locked. Try again in ${timeLeft} minutes`);
+        }
+
       const validPassword = comparePassword(password, user.password);
-      if (!validPassword)
-        throw new Error("Authentication Error: Invalid Password");
+      if (!validPassword){
+        user.failedLoginAttempts += 1;
+
+        if (user.failedLoginAttempts >= 3) {
+          user.lockedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+          await user.save();
+          throw new Error("Account locked for 24 hours due to 3 failed login attempts");
+        }
+
+        await user.save();
+        throw new Error(`Invalid password (${user.failedAttempts}/3)`);
+      }
+
+      user.failedLoginAttempts = 0;
+      user.lockedUntil = null;
+      await user.save();
 
 
           const tokenPayload = {
@@ -44,8 +63,6 @@ const login = async ({ email, password }) => {
       isAdmin: user.isAdmin,
       isBusiness: user.isBusiness
     };
-    
-
     const token = jwt.sign(tokenPayload, config.get('JWT_KEY'));
       
     

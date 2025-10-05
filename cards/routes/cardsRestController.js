@@ -5,6 +5,7 @@ const handleError = require('../../utils/errorHandler');
 const { like } = require('../cardsDataAccessService');
 const {auth, authIsB} = require('../../auth/authService');
 const jwt = require('jsonwebtoken');
+const { find } = require('lodash');
 
 
 
@@ -72,6 +73,7 @@ router.put('/:id', auth,  async (req, res) => {
     try {
         const token = req.header('x-auth-token');
         const user = jwt.decode(token);
+        console.log('user from token:', user);
         const userId = user._id; 
         const cardId = req.params.id;
         const card = await updateCard(cardId, req.body); 
@@ -87,9 +89,31 @@ router.put('/:id', auth,  async (req, res) => {
 });
 
 
+router.put('/admin/:cardId', auth,  async (req, res) => {
+    try {
+        const token = req.header('x-auth-token');
+        const user = jwt.decode(token);
+        const card = await updateCard(req.params.cardId, req.body);
+        
+        if(user.isAdmin !== true) {
+            return handleError(res, 403, "Forbidden - Admins only");
+        }
+        
+        card.bizNumber = req.body.bizNumber;
+        
+        
+        
+        return res.send('Card updated successfully - ' + card);
+    } catch (error) {
+        const status = error.status || 500;
+        handleError(res, status, error.message);
+    }
+});
 
 
-//Patch
+
+
+//Patch - like a card
 router.patch('/:id', auth, async (req, res) => {
     const cardid = req.params.id;
     const token = req.header('x-auth-token');

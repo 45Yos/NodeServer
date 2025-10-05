@@ -53,6 +53,15 @@ const userSchema = new mongoose.Schema({
             default: Date.now
         },
 
+        failedLoginAttempts: {
+        type: Number,
+        default: 0
+        },
+        lockedUntil: {
+        type: Date,
+        default: null
+        },
+
     });
 
 

@@ -4,13 +4,15 @@ const app = express();
 const handleError = require('./utils/errorHandler');
 const router = require('./router');
 const cors = require('./middlewares/cors');
-const { connect } = require('mongoose');
 const connectToDB = require('./DB/dbService');
 const config = require('config');
 const mongoose = require('mongoose');
 const PORT = config.get('PORT');
-const {generateInitialUsers, generateInitialCards} = require('./initialData/initialDataService');
+const logger = require('./logger/loggers/morganlogger');
+const { generateInitialUsers, generateInitialCards } = require('./initialData/initialDataService');
 
+
+app.use(logger); // Use the custom Morgan logger middleware
 app.use(cors); // Use the CORS middleware defined in middlewares/cors.js
 app.use(express.json()); // Middleware to parse JSON bodies
 app.use(express.text()); // Middleware to parse text bodies
@@ -85,7 +87,7 @@ app.get('/find-one', async (req, res) => {
   }
 });
 
-  app.use((err, req, res, next) => {
+  app.use((err, req, res) => {
     console.log(chalk.redBright(err.message));
     handleError(res, err.status || 500, err.message)
   });
@@ -93,6 +95,8 @@ app.get('/find-one', async (req, res) => {
 app.listen(PORT, () => {
   console.log(chalk.green(`\n\n\n Server is running on http://localhost:${PORT} \n`));
   connectToDB();
+  // generateInitialUsers();
+  // generateInitialCards();
 });
 
 
