@@ -16,9 +16,9 @@ return Promise.reject(error);
 
 
 const getMyCards = async (userId) => {
-    const card = await findMyCards(userId);
     try {
-    return Promise.resolve(card);
+        const cards = await findMyCards(userId);
+    return Promise.resolve(cards);
     } catch (error) {
 return Promise.reject(error);
     }
@@ -38,16 +38,17 @@ return Promise.reject(error);
 
 
 
-const addCard = async (rawCard) => {
+const addCard = async (rawCard, userId) => {
     
     try {
     const {error} = validateCard(rawCard);
     if (error) {
         return Promise.reject(error);
     }
+    
 
 
-    let card = await normalizeCard(rawCard);
+    let card = await normalizeCard(rawCard, userId);
     card = await create(card);
 
     return Promise.resolve(card);
@@ -62,9 +63,7 @@ return Promise.reject(error);
 
 const updateCard = async (cardId, rawCard) => {
     try {
-    const card = {...rawCard};
-        console.log('Updating card with data:', card);
-        
+    const card = await findOne(cardId);
     
     const updatedCard = await update(cardId, rawCard);
     return Promise.resolve(updatedCard);
@@ -88,8 +87,13 @@ const likeCard = async (cardId, userId) => {
 
 const deleteCard = async (cardId) => {
     try {
-        const card = await remove(cardId);
-        return Promise.resolve(card);
+        const card = await remove(cardId);     
+        if (!card) {
+            const error = new Error("Card not found or already deleted");
+            error.status = 404;
+            throw error;
+        } 
+        return Promise.resolve('card No: ' + cardId + ' removed ');
     } catch (error) {
         return Promise.reject(error);
     }

@@ -4,7 +4,9 @@ const Card = require("./models/mongodb/Card");
 const find = async () => {
   if (db === "DATABASE") {
     try {
-      return Promise.resolve(["Card 1", "Card 2", "Card 3"]);
+      const cards = await Card.find();
+      
+      return Promise.resolve(cards);
     } catch (error) {
       error.status = 404;
       return Promise.reject(error);
@@ -20,7 +22,8 @@ const find = async () => {
 const findMyCards = async (userId) => {
     if (db === "DATABASE") {
         try {
-            return Promise.resolve(["My Cards:" + userId]);
+            const cards = await Card.find({user_id: userId}); 
+            return Promise.resolve(cards);
         } catch (error) {
             error.status = 404;
             return Promise.reject(error);
@@ -34,7 +37,8 @@ const findMyCards = async (userId) => {
 const findOne = async (cardId) => {
   if (db === "DATABASE") {
     try {
-      return Promise.resolve('card No: ' + cardId);
+      const card = await Card.findById(cardId);
+      return Promise.resolve(card);
     } catch (error) {
       error.status = 404;
       return Promise.reject(error);
@@ -78,7 +82,7 @@ const update = async (cardId, normalizedCard) => {
       return Promise.resolve(card);
     } catch (error) {
       error.status = 400;
-      return handleBadRequest("Mongoose", error);
+      return Promise.reject(error);
     }
   }
   return Promise.resolve("card updateCard not in mongodb");
@@ -90,7 +94,22 @@ const update = async (cardId, normalizedCard) => {
 const like = async (cardId, userId) => {
   if (db === "DATABASE") {
     try {
-      return Promise.resolve('card No: ' + cardId + ' liked by user: ' + userId);
+      let result = '';
+      const card = await Card.findById(cardId);
+      const cardLikes = card.likes || [];
+
+      if (cardLikes.includes(userId)) {
+        card.likes = cardLikes.pop(userId);
+        result = 'User '+ userId + ' unliked card No: ' + cardId;
+      } else {
+        cardLikes.push(userId);
+        result = 'User '+ userId + ' liked card No: ' + cardId;
+      }
+      card.likes = cardLikes;
+      await card.save();
+      
+      
+      return Promise.resolve(result);
     } catch (error) {
       error.status = 404;
       return Promise.reject(error);
@@ -105,7 +124,8 @@ const like = async (cardId, userId) => {
 const remove = async (cardId) => {
   if (db === "DATABASE") {
     try {
-      return Promise.resolve('card No: ' + cardId + ' removed');
+      const card = await Card.findByIdAndDelete(cardId);
+      return Promise.resolve(card);
     } catch (error) {
       error.status = 404;
       return Promise.reject(error);
